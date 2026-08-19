@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account — Gancique Store</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+<div class="page-loader" aria-hidden="true"><div class="spinner"></div></div>
+
+<header class="header">
+  <div class="container navbar">
+    <a href="index.html" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 40 40" width="34" height="34" fill="none">
+          <circle cx="14" cy="10" r="6" stroke="#2563EB" stroke-width="3"/>
+          <path d="M18 14 L30 26" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>
+          <rect x="26" y="24" width="10" height="10" rx="3" fill="#F97316"/>
+        </svg>
+      </span>
+      Gancique Store
+    </a>
+    <nav class="nav-menu" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="products.html">Products</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="admin.html" class="btn btn-outline btn-sm is-hidden" data-admin-link>Admin Panel</a>
+      <button type="button" class="btn btn-primary btn-sm" data-logout-btn>Logout</button>
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+  <section class="section">
+    <div class="container" style="max-width: 760px;">
+
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">My Account</span>
+          <h1 class="section-title">Profile & Orders</h1>
+        </div>
+      </div>
+
+      <div class="contact-info-card" style="align-items:center; margin-bottom: var(--space-5);">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>
+        <div style="flex:1;">
+          <strong data-profile-name>Loading...</strong>
+          <span data-profile-email>—</span>
+        </div>
+      </div>
+
+      <form id="profile-form" style="margin-bottom: var(--space-7);">
+        <div class="form-group full">
+          <label for="profile-name-input">Full Name</label>
+          <input type="text" id="profile-name-input" required>
+        </div>
+        <button type="submit" class="btn btn-outline btn-sm">Save Changes</button>
+        <span class="form-error" data-profile-msg style="margin-left:10px;"></span>
+      </form>
+
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">History</span>
+          <h2 class="section-title" style="font-size: var(--fs-lg);">Order History</h2>
+        </div>
+      </div>
+      <div data-orders-list>
+        <p style="color:var(--color-text-gray);">Loading orders...</p>
+      </div>
+
+    </div>
+  </section>
+</main>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="container">
+    <div class="footer-bottom" style="border-top:none; padding-top:0;">
+      <span>© 2026 Gancique Store. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  document.querySelector(".page-loader")?.classList.add("is-hidden");
+
+  document.addEventListener("click", async (e) => {
+    if (!e.target.closest("[data-logout-btn]")) return;
+    try { await Api.auth.logout(); } catch { /* ignore */ }
+    window.location.href = "login.html";
+  });
+
+  let user;
+  try {
+    ({ user } = await Api.auth.me());
+  } catch {
+    window.location.href = "login.html";
+    return;
+  }
+
+  document.querySelector("[data-profile-name]").textContent = user.name;
+  document.querySelector("[data-profile-email]").textContent = user.email;
+  document.getElementById("profile-name-input").value = user.name;
+  if (user.role === "admin") document.querySelector("[data-admin-link]").classList.remove("is-hidden");
+
+  document.getElementById("profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.querySelector("[data-profile-msg]");
+    try {
+      const name = document.getElementById("profile-name-input").value.trim();
+      await Api.users.updateProfile(name);
+      document.querySelector("[data-profile-name]").textContent = name;
+      msg.style.color = "var(--color-success)";
+      msg.textContent = "Saved.";
+    } catch (err) {
+      msg.style.color = "var(--color-danger)";
+      msg.textContent = err.message;
+    }
+  });
+
+  try {
+    const { orders } = await Api.users.orders();
+    const listEl = document.querySelector("[data-orders-list]");
+    if (orders.length === 0) {
+      listEl.innerHTML = `<p style="color:var(--color-text-gray);">No orders yet — your placed orders will show up here.</p>`;
+    } else {
+      listEl.innerHTML = orders.map(o => `
+        <div class="contact-info-card" style="flex-direction:column; align-items:stretch; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>Order #${o.id}</strong>
+            <span style="font-size:var(--fs-xs); color:var(--color-text-gray);">${new Date(o.createdAt).toLocaleDateString()}</span>
+          </div>
+          <div style="font-size:var(--fs-sm); color:var(--color-text-gray);">
+            ${o.items.map(i => `${i.quantity}× ${i.name}`).join(", ")}
+          </div>
+          <div style="display:flex; justify-content:space-between; font-weight:700;">
+            <span>Status: ${o.status}</span>
+            <span>$${o.total.toFixed(2)}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+  } catch (err) {
+    document.querySelector("[data-orders-list]").innerHTML = `<p style="color:var(--color-danger);">Could not load orders: ${err.message}</p>`;
+  }
+});
+</script>
+</body>
+</html>

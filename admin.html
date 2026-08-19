@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel — Gancique Store</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/responsive.css">
+<style>
+  /* Small additions scoped to this page only — a data table and a two-column
+     admin form. Doesn't touch any shared component in style.css. */
+  .admin-table { width: 100%; border-collapse: collapse; background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius); overflow: hidden; }
+  .admin-table th, .admin-table td { text-align: left; padding: 12px 14px; font-size: var(--fs-sm); border-bottom: 1px solid var(--color-border); }
+  .admin-table th { background: var(--color-bg); font-weight: 700; }
+  .admin-table tr:last-child td { border-bottom: none; }
+  .admin-actions button { margin-right: 8px; font-size: var(--fs-xs); font-weight: 600; }
+  .admin-actions .edit-btn { color: var(--color-primary); }
+  .admin-actions .delete-btn { color: var(--color-danger); }
+  .admin-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--space-5); align-items: start; }
+  @media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="page-loader" aria-hidden="true"><div class="spinner"></div></div>
+
+<header class="header">
+  <div class="container navbar">
+    <a href="index.html" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 40 40" width="34" height="34" fill="none">
+          <circle cx="14" cy="10" r="6" stroke="#2563EB" stroke-width="3"/>
+          <path d="M18 14 L30 26" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>
+          <rect x="26" y="24" width="10" height="10" rx="3" fill="#F97316"/>
+        </svg>
+      </span>
+      Gancique Store <span style="font-weight:500; color:var(--color-text-gray); font-size:var(--fs-sm);">— Admin</span>
+    </a>
+    <div class="nav-actions">
+      <a href="account.html" class="btn btn-outline btn-sm">My Account</a>
+      <button type="button" class="btn btn-primary btn-sm" data-logout-btn>Logout</button>
+    </div>
+  </div>
+</header>
+
+<main id="admin-gate" class="is-hidden">
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Admin Panel</span>
+          <h1 class="section-title">Manage Catalog</h1>
+        </div>
+      </div>
+
+      <div class="admin-grid" style="margin-bottom: var(--space-7);">
+        <div>
+          <h3 style="margin-bottom: var(--space-3);">Categories</h3>
+          <form id="category-form" style="margin-bottom: var(--space-3);">
+            <input type="hidden" id="category-id">
+            <div class="form-group full">
+              <label for="category-name">Category Name</label>
+              <input type="text" id="category-name" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" id="category-submit-btn">Add Category</button>
+            <button type="button" class="btn btn-outline btn-sm is-hidden" id="category-cancel-btn">Cancel</button>
+            <span class="form-error" data-category-msg></span>
+          </form>
+          <table class="admin-table">
+            <thead><tr><th>Name</th><th>Products</th><th></th></tr></thead>
+            <tbody data-category-rows></tbody>
+          </table>
+        </div>
+
+        <div>
+          <h3 style="margin-bottom: var(--space-3);" id="product-form-title">Add Product</h3>
+          <form id="product-form">
+            <input type="hidden" id="product-id">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="product-name">Name</label>
+                <input type="text" id="product-name" required>
+              </div>
+              <div class="form-group">
+                <label for="product-category">Category</label>
+                <select id="product-category" required></select>
+              </div>
+              <div class="form-group">
+                <label for="product-price">Price ($)</label>
+                <input type="number" id="product-price" step="0.01" min="0" required>
+              </div>
+              <div class="form-group">
+                <label for="product-badge">Badge</label>
+                <select id="product-badge">
+                  <option value="">None</option>
+                  <option value="best">Best Seller</option>
+                  <option value="new">New</option>
+                  <option value="sale">Sale</option>
+                </select>
+              </div>
+              <div class="form-group full">
+                <label for="product-image">Image URL</label>
+                <input type="url" id="product-image">
+              </div>
+              <div class="form-group full">
+                <label for="product-description">Description</label>
+                <textarea id="product-description"></textarea>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm" id="product-submit-btn">Add Product</button>
+            <button type="button" class="btn btn-outline btn-sm is-hidden" id="product-cancel-btn">Cancel</button>
+            <span class="form-error" data-product-msg></span>
+          </form>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom: var(--space-3);">Products</h3>
+      <table class="admin-table">
+        <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Badge</th><th></th></tr></thead>
+        <tbody data-product-rows></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<div id="admin-denied" class="container is-hidden" style="padding: var(--space-8) 0; text-align:center;">
+  <h2>Admin access required.</h2>
+  <p style="color:var(--color-text-gray); margin: var(--space-2) 0 var(--space-4);">You need an administrator account to view this page.</p>
+  <a href="login.html" class="btn btn-primary">Login</a>
+</div>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="container">
+    <div class="footer-bottom" style="border-top:none; padding-top:0;">
+      <span>© 2026 Gancique Store. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  document.querySelector(".page-loader")?.classList.add("is-hidden");
+
+  document.addEventListener("click", async (e) => {
+    if (!e.target.closest("[data-logout-btn]")) return;
+    try { await Api.auth.logout(); } catch { /* ignore */ }
+    window.location.href = "login.html";
+  });
+
+  try {
+    const { user } = await Api.auth.me();
+    if (user.role !== "admin") throw new Error("not admin");
+  } catch {
+    document.getElementById("admin-denied").classList.remove("is-hidden");
+    return;
+  }
+  document.getElementById("admin-gate").classList.remove("is-hidden");
+
+  let categories = [];
+  let products = [];
+
+  async function loadCategories() {
+    ({ categories } = await Api.categories.list());
+    document.querySelector("[data-category-rows]").innerHTML = categories.map(c => `
+      <tr>
+        <td>${c.name}</td>
+        <td>${c.productCount}</td>
+        <td class="admin-actions">
+          <button class="edit-btn" data-edit-cat="${c.id}">Edit</button>
+          <button class="delete-btn" data-delete-cat="${c.id}">Delete</button>
+        </td>
+      </tr>
+    `).join("") || `<tr><td colspan="3">No categories yet.</td></tr>`;
+
+    const select = document.getElementById("product-category");
+    select.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  }
+
+  async function loadProducts() {
+    ({ products } = await Api.products.list());
+    document.querySelector("[data-product-rows]").innerHTML = products.map(p => `
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.category || "—"}</td>
+        <td>$${p.price.toFixed(2)}</td>
+        <td>${p.badge || "—"}</td>
+        <td class="admin-actions">
+          <button class="edit-btn" data-edit-prod="${p.id}">Edit</button>
+          <button class="delete-btn" data-delete-prod="${p.id}">Delete</button>
+        </td>
+      </tr>
+    `).join("") || `<tr><td colspan="5">No products yet.</td></tr>`;
+  }
+
+  await loadCategories();
+  await loadProducts();
+
+  /* ---------- Category form ---------- */
+  const catForm = document.getElementById("category-form");
+  const catIdField = document.getElementById("category-id");
+  const catNameField = document.getElementById("category-name");
+  const catSubmitBtn = document.getElementById("category-submit-btn");
+  const catCancelBtn = document.getElementById("category-cancel-btn");
+
+  function resetCategoryForm() {
+    catForm.reset();
+    catIdField.value = "";
+    catSubmitBtn.textContent = "Add Category";
+    catCancelBtn.classList.add("is-hidden");
+  }
+  catCancelBtn.addEventListener("click", resetCategoryForm);
+
+  catForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.querySelector("[data-category-msg]");
+    msg.textContent = "";
+    try {
+      if (catIdField.value) {
+        await Api.categories.update(catIdField.value, catNameField.value.trim());
+      } else {
+        await Api.categories.create(catNameField.value.trim());
+      }
+      resetCategoryForm();
+      await loadCategories();
+    } catch (err) {
+      msg.textContent = err.message;
+    }
+  });
+
+  document.addEventListener("click", async (e) => {
+    const editBtn = e.target.closest("[data-edit-cat]");
+    if (editBtn) {
+      const cat = categories.find(c => c.id == editBtn.dataset.editCat);
+      if (!cat) return;
+      catIdField.value = cat.id;
+      catNameField.value = cat.name;
+      catSubmitBtn.textContent = "Save Changes";
+      catCancelBtn.classList.remove("is-hidden");
+    }
+
+    const deleteBtn = e.target.closest("[data-delete-cat]");
+    if (deleteBtn) {
+      if (!confirm("Delete this category? Products in it will become uncategorized.")) return;
+      await Api.categories.remove(deleteBtn.dataset.deleteCat);
+      await loadCategories();
+      await loadProducts();
+    }
+  });
+
+  /* ---------- Product form ---------- */
+  const prodForm = document.getElementById("product-form");
+  const prodIdField = document.getElementById("product-id");
+  const prodSubmitBtn = document.getElementById("product-submit-btn");
+  const prodCancelBtn = document.getElementById("product-cancel-btn");
+  const prodFormTitle = document.getElementById("product-form-title");
+
+  function resetProductForm() {
+    prodForm.reset();
+    prodIdField.value = "";
+    prodSubmitBtn.textContent = "Add Product";
+    prodFormTitle.textContent = "Add Product";
+    prodCancelBtn.classList.add("is-hidden");
+  }
+  prodCancelBtn.addEventListener("click", resetProductForm);
+
+  prodForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.querySelector("[data-product-msg]");
+    msg.textContent = "";
+
+    const payload = {
+      name: document.getElementById("product-name").value.trim(),
+      price: Number(document.getElementById("product-price").value),
+      categoryId: Number(document.getElementById("product-category").value),
+      badge: document.getElementById("product-badge").value || null,
+      image: document.getElementById("product-image").value.trim(),
+      description: document.getElementById("product-description").value.trim(),
+      colors: []
+    };
+
+    try {
+      if (prodIdField.value) {
+        await Api.products.update(prodIdField.value, payload);
+      } else {
+        await Api.products.create(payload);
+      }
+      resetProductForm();
+      await loadProducts();
+    } catch (err) {
+      msg.textContent = err.message;
+    }
+  });
+
+  document.addEventListener("click", async (e) => {
+    const editBtn = e.target.closest("[data-edit-prod]");
+    if (editBtn) {
+      const p = products.find(x => x.id == editBtn.dataset.editProd);
+      if (!p) return;
+      prodIdField.value = p.id;
+      document.getElementById("product-name").value = p.name;
+      document.getElementById("product-category").value = p.categoryId || "";
+      document.getElementById("product-price").value = p.price;
+      document.getElementById("product-badge").value = p.badge || "";
+      document.getElementById("product-image").value = p.image || "";
+      document.getElementById("product-description").value = p.description || "";
+      prodSubmitBtn.textContent = "Save Changes";
+      prodFormTitle.textContent = `Edit: ${p.name}`;
+      prodCancelBtn.classList.remove("is-hidden");
+      window.scrollTo({ top: prodForm.offsetTop - 100, behavior: "smooth" });
+    }
+
+    const deleteBtn = e.target.closest("[data-delete-prod]");
+    if (deleteBtn) {
+      if (!confirm("Delete this product?")) return;
+      await Api.products.remove(deleteBtn.dataset.deleteProd);
+      await loadProducts();
+    }
+  });
+});
+</script>
+</body>
+</html>

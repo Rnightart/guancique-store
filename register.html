@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account — Gancique Store</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div class="page-loader" aria-hidden="true"><div class="spinner"></div></div>
+
+<header class="header">
+  <div class="container navbar">
+    <a href="index.html" class="logo">
+      <span class="logo-mark">
+        <svg viewBox="0 0 40 40" width="34" height="34" fill="none">
+          <circle cx="14" cy="10" r="6" stroke="#2563EB" stroke-width="3"/>
+          <path d="M18 14 L30 26" stroke="#2563EB" stroke-width="3" stroke-linecap="round"/>
+          <rect x="26" y="24" width="10" height="10" rx="3" fill="#F97316"/>
+        </svg>
+      </span>
+      Gancique Store
+    </a>
+    <nav class="nav-menu" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="products.html">Products</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="products.html" class="btn btn-outline btn-sm">Continue Shopping</a>
+    </div>
+  </div>
+</header>
+
+<main id="main-content">
+  <section class="section">
+    <div class="container" style="max-width: 440px;">
+      <div class="section-head" style="flex-direction:column; align-items:center; text-align:center;">
+        <span class="eyebrow">Join Us</span>
+        <h1 class="section-title">Create Your Account</h1>
+        <p class="section-sub">Save your cart, track orders, and check out faster.</p>
+      </div>
+
+      <form id="register-form" novalidate>
+        <div class="form-group full">
+          <label for="reg-name">Full Name</label>
+          <input type="text" id="reg-name" name="name" required>
+          <span class="form-error" data-error-name></span>
+        </div>
+        <div class="form-group full">
+          <label for="reg-email">Email Address</label>
+          <input type="email" id="reg-email" name="email" required>
+          <span class="form-error" data-error-email></span>
+        </div>
+        <div class="form-group full">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" name="password" required minlength="8">
+          <span class="form-error" data-error-password></span>
+        </div>
+        <div class="form-error" data-error-general style="margin-bottom: var(--space-3);"></div>
+        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+      </form>
+
+      <p style="text-align:center; margin-top: var(--space-4); font-size: var(--fs-sm); color: var(--color-text-gray);">
+        Already have an account? <a href="login.html" class="link-arrow" style="display:inline;">Login</a>
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer" style="margin-top:0;">
+  <div class="container">
+    <div class="footer-bottom" style="border-top:none; padding-top:0;">
+      <span>© 2026 Gancique Store. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/api.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelector(".page-loader")?.classList.add("is-hidden");
+
+  const form = document.getElementById("register-form");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    document.querySelectorAll(".form-error").forEach(el => el.textContent = "");
+
+    const name = document.getElementById("reg-name").value.trim();
+    const email = document.getElementById("reg-email").value.trim();
+    const password = document.getElementById("reg-password").value;
+
+    try {
+      await Api.auth.register(name, email, password);
+      window.location.href = "account.html";
+    } catch (err) {
+      if (err.fields) {
+        Object.entries(err.fields).forEach(([field, msg]) => {
+          const el = document.querySelector(`[data-error-${field}]`);
+          if (el) el.textContent = msg;
+        });
+      } else {
+        document.querySelector("[data-error-general]").textContent = err.message;
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>
